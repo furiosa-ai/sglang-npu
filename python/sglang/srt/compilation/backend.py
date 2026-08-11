@@ -20,10 +20,7 @@ from torch._dispatch.python import enable_python_dispatcher
 from sglang.srt.compilation.compilation_config import CompilationConfig
 from sglang.srt.compilation.compilation_counter import compilation_counter
 from sglang.srt.compilation.compiler_interface import EagerAdapter, InductorAdaptor
-from sglang.srt.compilation.cuda_piecewise_backend import CUDAPiecewiseBackend
-from sglang.srt.compilation.npu_piecewise_backend import NPUPiecewiseBackend
 from sglang.srt.compilation.pass_manager import PostGradPassManager
-from sglang.srt.compilation.xpu_piecewise_backend import XPUPiecewiseBackend
 from sglang.srt.environ import envs
 from sglang.srt.platforms import current_platform
 from sglang.srt.utils.common import is_npu, is_xpu
@@ -52,13 +49,21 @@ def make_backend(
     sglang_backend,
 ):
 
+    # Resolve OOT platforms before importing in-tree implementations, whose
+    # modules eagerly load device-specific graph support.
     if current_platform.is_out_of_tree():
         backend_cls = current_platform.get_piecewise_backend_cls()
     elif is_xpu():
+        from sglang.srt.compilation.xpu_piecewise_backend import XPUPiecewiseBackend
+
         backend_cls = XPUPiecewiseBackend
     elif is_npu():
+        from sglang.srt.compilation.npu_piecewise_backend import NPUPiecewiseBackend
+
         backend_cls = NPUPiecewiseBackend
     else:
+        from sglang.srt.compilation.cuda_piecewise_backend import CUDAPiecewiseBackend
+
         backend_cls = CUDAPiecewiseBackend
     return backend_cls(
         graph,
