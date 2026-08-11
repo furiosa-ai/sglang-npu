@@ -42,6 +42,53 @@ _mock_device.start()
 
 
 class TestPrepareServerArgs(CustomTestCase):
+    def test_platform_validation_runs_after_declarations_materialize(self):
+        config = {
+            "architectures": ["MistralLarge3ForCausalLM"],
+            "model_type": "mistral",
+            "hidden_size": 64,
+            "intermediate_size": 128,
+            "num_attention_heads": 4,
+            "num_hidden_layers": 2,
+            "num_key_value_heads": 2,
+            "vocab_size": 512,
+            "max_position_embeddings": 128,
+            "rms_norm_eps": 1e-5,
+            "torch_dtype": "bfloat16",
+            "kv_lora_rank": 32,
+            "qk_nope_head_dim": 16,
+            "qk_rope_head_dim": 8,
+            "v_head_dim": 16,
+        }
+
+        def validate(server_args):
+            self.assertTrue(server_args._declarations_materialized)
+            self.assertEqual(server_args.dtype, "bfloat16")
+
+        with tempfile.TemporaryDirectory() as config_dir:
+            with open(os.path.join(config_dir, "config.json"), "w") as config_file:
+                json.dump(config, config_file)
+            with patch.object(
+                server_args_module.current_platform,
+                "validate_server_args",
+                side_effect=validate,
+            ) as validate_server_args:
+                args = ServerArgs(
+                    model_path=config_dir,
+                    device="cuda",
+                    dtype="float16",
+                )
+
+        validate_server_args.assert_called_once_with(args)
+
+    def test_platform_validation_skips_dummy_model(self):
+        platform = MagicMock()
+        with patch.object(server_args_module, "current_platform", platform):
+            ServerArgs(model_path="dummy")
+
+        platform.apply_server_args_defaults.assert_not_called()
+        platform.validate_server_args.assert_not_called()
+
     def test_return_hidden_states_mode_configuration(self):
         disabled = ServerArgs(model_path="dummy")
         self.assertFalse(disabled.enable_return_hidden_states)

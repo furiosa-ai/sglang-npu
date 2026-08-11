@@ -48,6 +48,14 @@ class SRTPlatform(DeviceMixin):
         """
         pass
 
+    def validate_server_args(self, server_args) -> None:
+        """Validate platform requirements after server arguments are resolved.
+
+        Implementations must treat ``server_args`` as read-only and raise when
+        the resolved configuration is unsupported.
+        """
+        pass
+
     # ------------------------------------------------------------------
     # Subsystem factory methods
     # ------------------------------------------------------------------

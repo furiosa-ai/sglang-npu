@@ -193,6 +193,13 @@ class TestDeviceMixin(CustomTestCase):
 class TestSRTPlatform(CustomTestCase):
     """Tests for SRTPlatform base class and default behaviors."""
 
+    def test_server_args_lifecycle_hooks_default_to_noops(self):
+        base = SRTPlatform()
+        server_args = object()
+
+        self.assertIsNone(base.apply_server_args_defaults(server_args))
+        self.assertIsNone(base.validate_server_args(server_args))
+
     def test_compile_backend_signature_compatibility(self):
         """get_compile_backend accepts mode keyword arg without error."""
         base = SRTPlatform()

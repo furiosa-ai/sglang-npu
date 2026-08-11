@@ -571,12 +571,21 @@ python -c "from sglang.srt.platforms import current_platform; print(current_plat
       <td>Set platform-specific defaults</td>
     </tr>
     <tr>
+      <td><code>validate_server_args(server_args)</code></td>
+      <td>After all ServerArgs declarations are resolved</td>
+      <td>Validate platform-specific requirements</td>
+    </tr>
+    <tr>
       <td><code>init_backend()</code></td>
       <td>In each worker, before model construction</td>
       <td>One-time backend initialization</td>
     </tr>
   </tbody>
 </table>
+
+The two `ServerArgs` hooks run during normal initialization. The `none` and
+`dummy` model paths return before either hook. `validate_server_args` receives
+the final materialized values and must not modify them.
 
 ### Environment Variables
 
