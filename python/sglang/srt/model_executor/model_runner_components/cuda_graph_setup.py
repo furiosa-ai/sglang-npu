@@ -398,11 +398,17 @@ def capture_decode_graph(*, model_runner: ModelRunner) -> GraphCapture:
         return no_capture
     if model_runner.server_args.model_impl.lower() == ModelImpl.MINDSPORE:
         return no_capture
-    if model_runner.device != "cpu" and check_cuda_graph_backend(
+
+    decode_graph_disabled = check_cuda_graph_backend(
         Phase.DECODE, Backend.DISABLED
-    ):
-        return no_capture
-    if model_runner.device == "cpu" and not get_flags().capture.enable_torch_compile:
+    )
+    if model_runner.device == "cpu":
+        if current_platform.support_cuda_graph():
+            if decode_graph_disabled:
+                return no_capture
+        elif not get_flags().capture.enable_torch_compile:
+            return no_capture
+    elif decode_graph_disabled:
         return no_capture
 
     tic = time.perf_counter()
