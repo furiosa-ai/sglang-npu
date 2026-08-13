@@ -305,6 +305,8 @@ class PrefillCudaGraphRunner(BaseCudaGraphRunner):
             is_multimodal=self.is_multimodal,
             hidden_size=self.model_runner.model_config.hidden_size,
             dtype=self.model_runner.dtype,
+            input_ids_dtype=self._model_input_ids_dtype(),
+            positions_dtype=self._model_positions_dtype(),
             enable_mamba_track=self.mamba_track_enabled,
         )
         self.buffers.share_buffers()
@@ -316,6 +318,8 @@ class PrefillCudaGraphRunner(BaseCudaGraphRunner):
             max_bs=self.max_bs,
             max_num_token=self.max_num_tokens,
             cache_loc_dtype=self._cache_loc_dtype(),
+            input_ids_dtype=self._model_input_ids_dtype(),
+            positions_dtype=self._model_positions_dtype(),
             is_multimodal=self.is_multimodal,
             hidden_size=self.model_runner.model_config.hidden_size,
             embed_dtype=self.model_runner.dtype,

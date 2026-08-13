@@ -45,6 +45,7 @@ from sglang.srt.model_executor.runner.flashinfer_autotune import (
     run_flashinfer_autotune_forward,
     should_run_flashinfer_autotune,
 )
+from sglang.srt.platforms import current_platform
 from sglang.srt.runtime_context import get_flags, get_parallel
 from sglang.srt.speculative.spec_info import create_dummy_verify_input
 from sglang.srt.utils import (
@@ -77,6 +78,8 @@ def _allocate_decode_buffers(
     encoder_len_fill_value: int,
     num_tokens_per_req: int,
     cache_loc_dtype: torch.dtype,
+    input_ids_dtype: torch.dtype,
+    positions_dtype: torch.dtype,
     enable_mamba_track: bool,
     ne_token_table: Optional[torch.Tensor] = None,
     hc_hidden_size: Optional[int] = None,
@@ -85,12 +88,12 @@ def _allocate_decode_buffers(
 ) -> SimpleNamespace:
     """Allocate the FB-shared decode buffers."""
     with torch.device(device):
-        input_ids = torch.zeros((max_num_token,), dtype=torch.int64)
+        input_ids = torch.zeros((max_num_token,), dtype=input_ids_dtype)
         input_embeds = torch.zeros((max_num_token, hidden_size), dtype=dtype)
         req_pool_indices = torch.zeros((max_bs,), dtype=torch.int64)
         seq_lens = torch.full((max_bs,), seq_len_fill_value, dtype=torch.int64)
         out_cache_loc = torch.zeros((max_num_token,), dtype=cache_loc_dtype)
-        positions = torch.zeros((max_num_token,), dtype=torch.int64)
+        positions = torch.zeros((max_num_token,), dtype=positions_dtype)
         mrope_positions = torch.zeros((3, max_num_token), dtype=torch.int64)
         num_token_non_padded = torch.zeros((1,), dtype=torch.int32)
         custom_mask = torch.ones(
@@ -336,6 +339,8 @@ class BaseRunner(ABC):
             ),
             num_tokens_per_req=num_tokens_per_req,
             cache_loc_dtype=torch.int64,
+            input_ids_dtype=self._model_input_ids_dtype(),
+            positions_dtype=self._model_positions_dtype(),
             enable_mamba_track=False,
             ne_token_table=(
                 mr.ngram_embedding_manager.table
@@ -346,6 +351,12 @@ class BaseRunner(ABC):
             pp_proxy_topk_size=mr.get_pp_proxy_topk_size(),
             pp_proxy_residual_num_blocks=mr.get_pp_proxy_residual_num_blocks(),
         )
+
+    def _model_input_ids_dtype(self) -> torch.dtype:
+        return current_platform.get_model_input_ids_dtype()
+
+    def _model_positions_dtype(self) -> torch.dtype:
+        return current_platform.get_model_positions_dtype()
 
     def _dummy_run(
         self,

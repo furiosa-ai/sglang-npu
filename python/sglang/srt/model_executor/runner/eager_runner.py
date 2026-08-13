@@ -122,6 +122,8 @@ class EagerRunner(BaseRunner):
             max_bs=max_bs,
             max_num_token=max_num_token,
             cache_loc_dtype=torch.int64,
+            input_ids_dtype=self._model_input_ids_dtype(),
+            positions_dtype=self._model_positions_dtype(),
             enable_mamba_track=(
                 sa.enable_mamba_extra_buffer() and mr.spec_algorithm.is_none()
             ),

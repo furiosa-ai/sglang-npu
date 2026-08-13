@@ -101,6 +101,8 @@ class DecodeInputBuffers(ForwardInputBuffers):
         encoder_len_fill_value: int,
         num_tokens_per_req: int,
         cache_loc_dtype: torch.dtype,
+        input_ids_dtype: torch.dtype = torch.int64,
+        positions_dtype: torch.dtype = torch.int64,
         enable_mamba_track: bool,
         ne_token_table: Optional[torch.Tensor] = None,
         hc_hidden_size: Optional[int] = None,
@@ -108,12 +110,12 @@ class DecodeInputBuffers(ForwardInputBuffers):
         pp_proxy_residual_num_blocks: Optional[int] = None,
     ) -> DecodeInputBuffers:
         with torch.device(device):
-            input_ids = torch.zeros((max_num_token,), dtype=torch.int64)
+            input_ids = torch.zeros((max_num_token,), dtype=input_ids_dtype)
             input_embeds = torch.zeros((max_num_token, hidden_size), dtype=dtype)
             req_pool_indices = torch.zeros((max_bs,), dtype=torch.int64)
             seq_lens = torch.full((max_bs,), seq_len_fill_value, dtype=torch.int64)
             out_cache_loc = torch.zeros((max_num_token,), dtype=cache_loc_dtype)
-            positions = torch.zeros((max_num_token,), dtype=torch.int64)
+            positions = torch.zeros((max_num_token,), dtype=positions_dtype)
             mrope_positions = torch.zeros((3, max_num_token), dtype=torch.int64)
             num_token_non_padded = torch.zeros((1,), dtype=torch.int32)
             custom_mask = torch.ones(
@@ -354,10 +356,12 @@ class PrefillInputBuffers(ForwardInputBuffers):
         is_multimodal: bool,
         hidden_size: int,
         dtype: torch.dtype,
+        input_ids_dtype: torch.dtype = torch.int64,
+        positions_dtype: torch.dtype = torch.int64,
         enable_mamba_track: bool,
     ) -> PrefillInputBuffers:
         with torch.device(device):
-            input_ids = torch.zeros((max_num_tokens,), dtype=torch.int64)
+            input_ids = torch.zeros((max_num_tokens,), dtype=input_ids_dtype)
             out_cache_loc = torch.zeros((max_num_tokens,), dtype=cache_loc_dtype)
             num_token_non_padded = torch.zeros((1,), dtype=torch.int32)
             mamba_track_indices = (
@@ -373,7 +377,7 @@ class PrefillInputBuffers(ForwardInputBuffers):
                 if enable_mamba_track
                 else None
             )
-            positions = torch.zeros((max_num_tokens,), dtype=torch.int64)
+            positions = torch.zeros((max_num_tokens,), dtype=positions_dtype)
 
             if is_multimodal:
                 input_embeds = torch.zeros((max_num_tokens, hidden_size), dtype=dtype)

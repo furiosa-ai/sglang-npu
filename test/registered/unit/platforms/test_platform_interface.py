@@ -198,6 +198,12 @@ class TestSRTPlatform(CustomTestCase):
         base = SRTPlatform()
         self.assertEqual(base.get_compile_backend(mode="npugraph_ex"), "inductor")
 
+    def test_model_index_buffer_dtypes_default_to_int64(self):
+        base = SRTPlatform()
+
+        self.assertIs(base.get_model_input_ids_dtype(), torch.int64)
+        self.assertIs(base.get_model_positions_dtype(), torch.int64)
+
     def test_base_device_identity_stays_unspecified(self):
         """The abstract SRT base should not claim any concrete in-tree device."""
         base = SRTPlatform()

@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Type
 
+import torch
+
 from sglang.srt.platforms.device_mixin import DeviceMixin, PlatformEnum
 
 if TYPE_CHECKING:
@@ -59,6 +61,14 @@ class SRTPlatform(DeviceMixin):
     def get_graph_runner_cls(self) -> type:
         """Return the graph runner class for this platform."""
         raise NotImplementedError
+
+    def get_model_input_ids_dtype(self) -> torch.dtype:
+        """Return the dtype of model-facing token ID buffers."""
+        return torch.int64
+
+    def get_model_positions_dtype(self) -> torch.dtype:
+        """Return the dtype of model-facing position buffers."""
+        return torch.int64
 
     def get_mha_kv_pool_cls(self) -> type:
         """Return the MHA KV pool class for this platform."""

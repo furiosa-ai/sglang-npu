@@ -370,6 +370,8 @@ class DecodeCudaGraphRunner(BaseCudaGraphRunner):
             encoder_len_fill_value=self.encoder_len_fill_value,
             num_tokens_per_req=self.captured_req_width,
             cache_loc_dtype=self._cache_loc_dtype(),
+            input_ids_dtype=self._model_input_ids_dtype(),
+            positions_dtype=self._model_positions_dtype(),
             enable_mamba_track=enable_mamba_track,
             ne_token_table=(
                 model_runner.ngram_embedding_manager.table
@@ -395,6 +397,8 @@ class DecodeCudaGraphRunner(BaseCudaGraphRunner):
             max_num_token=self.max_num_token,
             seq_len_fill_value=self.seq_len_fill_value,
             cache_loc_dtype=self._cache_loc_dtype(),
+            input_ids_dtype=self._model_input_ids_dtype(),
+            positions_dtype=self._model_positions_dtype(),
             enable_mamba_track=enable_mamba_track,
             is_encoder_decoder=self.is_encoder_decoder,
             encoder_len_fill_value=self.encoder_len_fill_value,

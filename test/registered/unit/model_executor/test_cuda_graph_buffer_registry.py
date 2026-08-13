@@ -653,6 +653,54 @@ class TestBuildDecodeRegistry(unittest.TestCase):
 
         input_buffers._forward_input_buffer_pool.clear()
 
+    def test_model_index_slot_dtypes_are_configurable(self):
+        from sglang.srt.model_executor.cuda_graph_buffer_registry import (
+            build_decode_registry,
+        )
+        from sglang.srt.model_executor.runner_utils.buffers import DecodeInputBuffers
+
+        buffers = DecodeInputBuffers.create(
+            device=torch.device("cpu"),
+            max_bs=2,
+            max_num_token=2,
+            hidden_size=4,
+            next_token_logits_buffer=torch.zeros((2, 8)),
+            dtype=torch.bfloat16,
+            dp_size=1,
+            pp_size=1,
+            is_encoder_decoder=False,
+            require_mlp_tp_gather=False,
+            seq_len_fill_value=1,
+            encoder_len_fill_value=0,
+            num_tokens_per_req=1,
+            cache_loc_dtype=torch.int64,
+            input_ids_dtype=torch.int32,
+            positions_dtype=torch.int32,
+            enable_mamba_track=False,
+        )
+        reg = build_decode_registry(
+            device=torch.device("cpu"),
+            max_bs=2,
+            max_num_token=2,
+            seq_len_fill_value=1,
+            cache_loc_dtype=torch.int64,
+            input_ids_dtype=torch.int32,
+            positions_dtype=torch.int32,
+            share_pool=False,
+            source=buffers,
+        )
+
+        self.assertIs(reg.get_slot("input_ids").buffer.dtype, torch.int32)
+        self.assertIs(reg.get_slot("positions").buffer.dtype, torch.int32)
+        self.assertEqual(
+            reg.get_slot("input_ids").buffer.data_ptr(),
+            buffers.input_ids.data_ptr(),
+        )
+        self.assertEqual(
+            reg.get_slot("positions").buffer.data_ptr(),
+            buffers.positions.data_ptr(),
+        )
+
     def test_factory_slot_set_and_padding(self):
         from sglang.srt.model_executor.cuda_graph_buffer_registry import (
             build_decode_registry,
@@ -1022,6 +1070,46 @@ class TestBuildPrefillRegistry(unittest.TestCase):
         )
         base.update(extra)
         return SimpleNamespace(**base)
+
+    def test_model_index_slot_dtypes_are_configurable(self):
+        from sglang.srt.model_executor.cuda_graph_buffer_registry import (
+            build_prefill_registry,
+        )
+        from sglang.srt.model_executor.runner_utils.buffers import PrefillInputBuffers
+
+        buffers = PrefillInputBuffers.create(
+            device=torch.device("cpu"),
+            max_bs=1,
+            max_num_tokens=4,
+            cache_loc_dtype=torch.int64,
+            is_multimodal=False,
+            hidden_size=4,
+            dtype=torch.bfloat16,
+            input_ids_dtype=torch.int32,
+            positions_dtype=torch.int32,
+            enable_mamba_track=False,
+        )
+        reg = build_prefill_registry(
+            device=torch.device("cpu"),
+            max_bs=1,
+            max_num_token=4,
+            cache_loc_dtype=torch.int64,
+            input_ids_dtype=torch.int32,
+            positions_dtype=torch.int32,
+            share_pool=False,
+            source=buffers,
+        )
+
+        self.assertIs(reg.get_slot("input_ids").buffer.dtype, torch.int32)
+        self.assertIs(reg.get_slot("positions").buffer.dtype, torch.int32)
+        self.assertEqual(
+            reg.get_slot("input_ids").buffer.data_ptr(),
+            buffers.input_ids.data_ptr(),
+        )
+        self.assertEqual(
+            reg.get_slot("positions").buffer.data_ptr(),
+            buffers.positions.data_ptr(),
+        )
 
     def test_core_token_slots_zero_tail_and_copy_head(self):
         from sglang.srt.model_executor.cuda_graph_buffer_registry import (
