@@ -1,5 +1,6 @@
 import unittest
 from array import array
+from unittest.mock import patch
 
 import torch
 
@@ -7,12 +8,28 @@ from sglang.srt.utils.common import (
     flatten_arrays_to_int64_tensor,
     get_device_sm_nvidia_smi,
     get_nvidia_driver_version_str,
+    support_triton,
 )
 from sglang.test.ci.ci_register import register_amd_ci, register_cuda_ci
 from sglang.test.test_utils import CustomTestCase
 
 register_cuda_ci(est_time=5, stage="base-b", runner_config="1-gpu-small")
 register_amd_ci(est_time=5, stage="stage-b", runner_config="1-gpu-small-amd")
+
+
+class TestTritonSupport(CustomTestCase):
+    @patch("sglang.srt.platforms.current_platform")
+    def test_cpu_carrier_disables_triton(self, platform):
+        platform.device_type = "cpu"
+
+        self.assertFalse(support_triton("custom"))
+
+    @patch("sglang.srt.platforms.current_platform")
+    def test_backend_can_disable_triton(self, platform):
+        platform.device_type = "cuda"
+
+        self.assertFalse(support_triton("torch_native"))
+        self.assertTrue(support_triton("triton"))
 
 
 @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
